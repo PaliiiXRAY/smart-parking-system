@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth, homeForRole } from '../AuthContext';
 import Segmented from '../components/Segmented';
+import Logo from '../components/Logo';
 
 const VEHICLE_TYPES = ['Bike', 'Car', 'SUV'];
 
@@ -75,9 +76,7 @@ export default function Register() {
     <main className="auth-wrap">
       <div className="card stack-lg auth-card" style={{ maxWidth: '480px' }}>
         <div className="brand" style={{ padding: 0 }}>
-          <span className="brand-mark" aria-hidden="true">
-            P
-          </span>
+          <Logo size={42} />
           <div>
             <div className="brand-name" style={{ color: 'var(--ink)' }}>
               ParkSmart
