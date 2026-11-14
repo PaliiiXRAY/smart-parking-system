@@ -13,6 +13,7 @@ const vehiclesRoutes = require('./routes/vehicles');
 const billingRoutes = require('./routes/billing');
 const { requireAuth, requireRole } = require('./middleware/auth');
 const { errorHandler } = require('./errors');
+const { startReservationCleanup } = require('./cleanup');
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use(errorHandler);
 const PORT = Number(process.env.PORT) || 4000;
 
 if (require.main === module) {
+  startReservationCleanup(30000);
   app.listen(PORT, () => {
     console.log(`ParkSmart API listening on http://localhost:${PORT}`);
   });

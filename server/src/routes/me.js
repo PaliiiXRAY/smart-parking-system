@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const { HttpError, asyncHandler, normalizePlate } = require('../errors');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { cleanExpiredReservations } = require('../cleanup');
 
 const router = express.Router();
 
@@ -33,23 +34,6 @@ function readOnlineMethod(body) {
 
 function wantsFailure(body) {
   return String((body && body.simulate) || 'success').trim().toLowerCase() === 'fail';
-}
-
-// Expired holds are released (slot freed by trigger) and the booking payment is
-// marked as forfeited in the ledger, all in one statement.
-async function cleanExpiredReservations(db = pool) {
-  await db.query(
-    `WITH gone AS (
-       DELETE FROM reservation
-        WHERE expires_at < now()
-        RETURNING txn_ref
-     )
-     UPDATE online_payment op
-        SET status = 'EXPIRED'
-       FROM gone
-      WHERE op.txn_ref = gone.txn_ref
-        AND op.status = 'PAID'`
-  );
 }
 
 // A plate first seen at the gate is filed under the shared "Visitor" owner.

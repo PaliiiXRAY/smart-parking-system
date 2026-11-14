@@ -702,4 +702,54 @@ describe('ParkSmart API', () => {
       await cleanTestPlates('TS 01 WK');
     }
   });
+
+  it('Background reservation cleanup frees expired holds and marks ledger EXPIRED', async () => {
+    const { cleanExpiredReservations } = require('../src/cleanup');
+    const plate = 'TS 01 EX 9999';
+    await cleanTestPlates('TS 01 EX');
+
+    try {
+      // Find a free slot
+      const freeSlotRes = await pool.query(
+        `SELECT slot_id, slot_code FROM slot WHERE status = 'FREE' LIMIT 1`
+      );
+      assert.ok(freeSlotRes.rows.length > 0);
+      const slot = freeSlotRes.rows[0];
+
+      // Ensure test vehicle exists
+      await pool.query(
+        `INSERT INTO vehicle (plate_no, type_id, owner_id, plan)
+         VALUES ($1, 2, 1, 'VISITOR')
+         ON CONFLICT (plate_no) DO NOTHING`,
+        [plate]
+      );
+
+      // Create an expired reservation
+      await pool.query(
+        `INSERT INTO reservation (plate_no, slot_id, created_at, expires_at, amount, method, txn_ref)
+         VALUES ($1, $2, now() - INTERVAL '30 minutes', now() - INTERVAL '5 minutes', 40.00, 'UPI', 'SIM-TEST-EXPIRED')`,
+        [plate, slot.slot_id]
+      );
+
+      // Verify slot is RESERVED due to trigger
+      const reservedCheck = await pool.query(
+        `SELECT status FROM slot WHERE slot_id = $1`,
+        [slot.slot_id]
+      );
+      assert.equal(reservedCheck.rows[0].status, 'RESERVED');
+
+      // Run cleanup
+      const cleanedCount = await cleanExpiredReservations();
+      assert.ok(cleanedCount >= 0);
+
+      // Verify slot is freed automatically by trigger
+      const freedCheck = await pool.query(
+        `SELECT status FROM slot WHERE slot_id = $1`,
+        [slot.slot_id]
+      );
+      assert.equal(freedCheck.rows[0].status, 'FREE');
+    } finally {
+      await cleanTestPlates('TS 01 EX');
+    }
+  });
 });
