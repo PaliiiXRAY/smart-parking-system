@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { formatTitleWord } from '../format';
+import Logo from './Logo';
 
 function getInitials(name) {
   const parts = String(name || '')
@@ -28,7 +29,7 @@ export default function Layout() {
     <div className="app">
       <aside className="side">
         <div className="brand">
-          <div className="logo">P</div>
+          <Logo size={36} />
           <b>ParkSmart</b>
         </div>
 

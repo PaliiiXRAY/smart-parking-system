@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { HttpError, asyncHandler } = require('../errors');
+const { cleanExpiredReservations } = require('../cleanup');
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ router.get(
 router.get(
   '/slots',
   asyncHandler(async (req, res) => {
+    await cleanExpiredReservations();
     const floorParam = String(req.query.floor || 'G').trim();
 
     const floorRes = await pool.query(
